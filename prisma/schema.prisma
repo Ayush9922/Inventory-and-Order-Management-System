@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   // "ADMIN" | "SELLER"
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+model Product {
+  id                String      @id @default(uuid())
+  sku               String      @unique
+  name              String
+  description       String?
+  category          String
+  dimension         String      // "WEIGHT" | "VOLUME" | "COUNT"
+  baseUnit          String      // "g" | "mL" | "item"
+  pricePerBaseUnit  Decimal     @db.Decimal(20, 8)
+  stockQuantity     Decimal     @db.Decimal(20, 8)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  orderItems        OrderItem[]
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  sellerId   String
+  seller     User        @relation(fields: [sellerId], references: [id])
+  status     String      @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  totalPrice Decimal     @db.Decimal(20, 8)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id              String   @id @default(uuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  orderedQuantity Decimal  @db.Decimal(20, 8)
+  orderedUnit     String   // "g" | "kg" | "mL" | "L" | "item"
+  baseQuantity    Decimal  @db.Decimal(20, 8)
+  pricePerUnit    Decimal  @db.Decimal(20, 8)
+  subtotal        Decimal  @db.Decimal(20, 8)
+}
